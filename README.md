@@ -88,6 +88,14 @@ async function main() {
 main();
 ```
 
+Save this to a file named `program.js` inside of your working directory. To run your program, execute the following in your terminal:
+
+```sh
+node program.js
+```
+
+You should see a lot of JSON data printed to the screen. If not, check the file for errors and make sure you have Node.js isntalled.
+
 ## Map Buddy Preparation
 
 > Map Buddy is a service that allows users to create and subscribe to maps. Using the API, you may then add posts to maps that you create. It then allows you to visualize the posts that you've created on a webpage.
@@ -183,7 +191,7 @@ In Postman, select the _Map_ > _Create Map_ endpoint. Modify the _Body_ payload 
 ```json
 {
   "name": "<YOUR_USERNAME_HERE>",
-  "listable": false,
+  "listable": true,
   "password": null,
   "non_member_read": true,
   "non_member_write": false,
@@ -207,7 +215,7 @@ You should get a response that looks something like this:
 {
   "id": "f179eebe-0ab5-447c-ae3d-d4eeb8872ca1",
   "name": "tlhunter",
-  "listable": false,
+  "listable": true,
   "created": "2022-07-30T18:34:34.277Z",
   "non_member_read": true,
   "non_member_write": false,
@@ -234,3 +242,76 @@ You should get a response that looks something like this:
 ```
 
 If you get a different response, check your request body for any errors.
+
+Keep track of the map name that you have chosen. You'll need it next when you add posts to the map.
+
+## Creating Resources
+
+You're now ready to update your Node.js program. Modify your `program.js` file to look like the following, substituting the appropriate data:
+
+```javascript
+const fetch = require('node-fetch');
+
+const RADAR_MAP = '<YOUR MAP NAME>';
+const AUTH = '<YOUR AUTHORIZATION HEADER>';
+
+
+async function main() {
+  const response = await fetch('https://data.sfgov.org/resource/vw6y-z8j6.json');
+  const records = await response.json();
+  console.log('got records', records.length);
+  await createEntries(records);
+}
+main();
+
+async function createEntries(records) {
+  for (let record of records) {
+    const time = new Date(record.requested_datetime + '-07:00');
+    const payload = {
+      message: record.service_name,
+      lat: Number(record.lat),
+      lon: Number(record.long),
+      created: time.toISOString(),
+      level: 'beacon',
+      replies: true
+    };
+
+    const response = await fetch(`https://api.mapbuddy.app/v2/maps/${RADAR_MAP}/posts`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: AUTH,
+      },
+    });
+
+    const body = await response.json();
+
+    if (body.error) {
+      console.error(body);
+      throw new Error('unable to create');
+    }
+
+    console.log(body);
+    process.exit(); // uncomment to import everything
+  }
+}
+```
+
+Your program may run for a while at this point as it creates map posts. It'll probably create 1,000 of them if you haven't changed any of the filters.
+
+## Viewing your Map
+
+To view your map, copy the following into your browser and replace the name of your map:
+
+```
+https://app.mapbuddy.app/map/<MAP NAME>
+```
+
+## Optional Enhancements / Homework
+
+- Are there additional APIs with sources of data you can find to add to the map?
+- Can you modify the program so that it runs a web server and only goes through this process when your server receives a request?
+- How would you modify the application to only request certain fields or ranges of data from SF 311?
+  - Hint: Look into the `URLSearchParams` object in JavaScript.
+- How would you design a "bot" that runs nightly to fetch results? Keep in mind you don't want to create the same thing twice.
