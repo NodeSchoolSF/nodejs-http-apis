@@ -180,6 +180,8 @@ The important part of this response is the `authorization_header` field. This wi
 
 In the upper right corner of Postman, you should see the word _Production_, which is the name of the Postman environment imported from the Map Buddy collection, and next to that is an eye ball icon. Click that icon. Next, click the _Edit_ link in the popup.
 
+![Postman Environments](./postman-env.png)
+
 In the _Current Value_ dropdown, change the _username_ field to the `user_id` response value. Also, change the _password_ field to be the `auth_token` response value. Once you've done that, all future requests made using Postman will be authenticated using your account.
 
 ### Create a Map
